@@ -14,11 +14,11 @@ clean_data_f <- function(data){
 
     # Rename Concentration
     rename(
-      virus_c = Concentration
+      virus_dilution = Concentration
     ) %>%
     # Change the data types and convert the concentration to log scale
     mutate(
-      virus_c = log10(virus_c),
+      virus_dilution = log10(virus_dilution),
       repetition = as.factor(repetition),
       value = as.factor(value)
     )
