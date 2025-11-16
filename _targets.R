@@ -37,9 +37,9 @@ list(
     command = pp_simualtion_bernoulli(
       data = data_clean,
       priors = c(
-        # For each increase of log(virus_c) the chance of virus infection drops by 15-20%
-        prior(normal(-0.5, 5), class = "b", coef = "virus_c"),
-        # When virus_c = 0 The log odds of virus infection is 4.5 or 90%
+        # For each increase of log(virus_dilution) the chance of virus infection drops
+        prior(normal(0, 3), class = "b", coef = "virus_dilution"),
+        # When virus_dilution = 0 The log odds of virus infection
         prior(normal(2,2),class = "Intercept")
       ))
   ),
@@ -56,9 +56,9 @@ list(
     command = bernoulli_bayes(
       data = data_clean,
       priors = c(
-        # For each increase of log(virus_c) the chance of virus infection drops by 15-20%
-        prior(normal(-0.5, 3), class = "b", coef = "virus_c"),
-        # When virus_c = 0 The log odds of virus infection is 2 or 90%
+        # For each increase of log(virus_dilution) the chance of virus infection drops by
+        prior(normal(0, 3), class = "b", coef = "virus_dilution"),
+        # When virus_dilution = 0 The log odds of virus infection
         prior(normal(2,2),class = "Intercept")
       ))
   ),
@@ -67,6 +67,13 @@ list(
   tar_target(
     name = bernoulli_model_diagnostics,
     command = bayes_diagnostics(bernoulli_bayes_model)
-  )
+  ),
 
+  ## Model Insights ##
+  tar_target(
+    name = bernoulli_model_insights,
+    command = bayes_insights(bernoulli_bayes_model)
+  )
 )
+
+
