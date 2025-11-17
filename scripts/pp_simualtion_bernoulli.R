@@ -8,12 +8,13 @@ pp_simualtion_bernoulli <- function(data,priors){
 
   ### Formula ###
   formula <- brmsformula(
-    value ~ virus_dilution,
+    outcome ~ virus_dilution,
     family = bernoulli(link = "logit"))
 
   # Run the model
   prior_simulation <- brm(
-    formula = formula,data = data,
+    formula = formula,
+    data = data,
     family = bernoulli(),
     prior = priors,
     sample_prior = "only",
