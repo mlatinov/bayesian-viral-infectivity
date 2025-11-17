@@ -1,6 +1,6 @@
 
 #### Function to Collect insights from Bayesian model ####
-bayes_insights <- function(model){
+bayes_insights <- function(model,data){
 
   #### Libraries ####
   library(bayesplot)
@@ -53,22 +53,22 @@ bayes_insights <- function(model){
 
 ### Conditional Effect of Virus Infections and Virus Dilution ####
   contional_effect <- conditional_effects(
-    bernoulli_bayes_model,
+    model,
     prob = 0.88,
     spaghetti = TRUE
     )
 
   # Create realistic dilution values from your data
   dilution_values <- seq(
-    min(data_clean$virus_dilution),
-    max(data_clean$virus_dilution),
+    min(data$virus_dilution),
+    max(data$virus_dilution),
     length.out = 100
   )
 
-  # Calculate probabilities for each value
+  # Calculate probabilities for each outcome
   probability_shifts <- posterior_draws %>%
     spread_draws(b_Intercept, b_virus_dilution) %>%
-    # Create a row for each dilution value
+    # Create a row for each dilution
     expand_grid(dilution = dilution_values) %>%
     # Calculate probability for each combination
     mutate(

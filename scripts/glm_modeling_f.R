@@ -6,7 +6,7 @@ glm_modeling_f <- function(data){
   library(logistf)
 
   # Fit the model
-  glm_model <- logistf(value ~ virus_dilution, data = data)
+  glm_model <- logistf(outcome ~ virus_dilution, data = data)
 
   # Create a fine sequence of virus_dilution for smooth curve
   virus_seq <- seq(min(data$virus_dilution),
@@ -21,7 +21,7 @@ glm_modeling_f <- function(data){
 
   # Plot raw data + logistic curve
   p1 <-
-    ggplot(data, aes(x = virus_dilution, y = value)) +
+    ggplot(data, aes(x = virus_dilution, y = outocme)) +
     geom_line(data = curve_df, aes(y = pred), color = "blue", size = 1.2) +
     labs(
       title = "Logistics model predictions",
