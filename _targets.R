@@ -1,6 +1,7 @@
 
 #### Global Libraries ####
 library(targets)
+library(tarchetypes)
 library(tidyverse)
 
 #### Source Function ####
@@ -121,12 +122,38 @@ list(
   #### Model Compare ####
   tar_target(
     name = model_compare,
-    command = compare_bayes_models(
-      model_1_diag = bernoulli_model_diagnostics,
-      model_2_diag = bernoulli_model_diagnostics_2,
-      insights_1 = bernoulli_model_insights,
-      insights_2 = bernoulli_model_insights_2
-      )
+    command =
+      lapply(
+        list(bernoulli_bayes_model,bernoulli_bayes_model_v2),
+        compare_bayes_models
+        )
+    ),
+
+  #### Render Reports ####
+
+  ## Combine everything into one tibble
+  tar_target(
+    name = report_data,
+    command = tibble(
+      name = c("Basic_model","Full_model"),
+      diagnostics = list(
+        bernoulli_model_diagnostics,
+        bernoulli_model_diagnostics_2
+        ),
+      insights = list(
+        bernoulli_model_insights,
+        bernoulli_model_insights_2
+      ),
+      comparison = list(model_compare)
+    )
+  ),
+
+  ## Report summarizing the results
+  tar_render(
+    end_report,
+    path = "documents/end_report.Rmd",
+    output_file = "end_report.html",
+    params = list(data = report_data)
   )
 )
 
