@@ -6,6 +6,7 @@ bayes_insights <- function(model,data){
   library(bayesplot)
   library(posterior)
   library(brms)
+  library(pracma)
   library(tidybayes)
 
   #### Posterior Summaries for Virus infections ####
@@ -116,6 +117,36 @@ bayes_insights <- function(model,data){
       fill = "Credible Interval"
     ) +
     theme_minimal()
+
+
+  #### Experimental ####
+
+  ## Compute the Posterior Distribution of the Area Under Infection Probability Curve
+
+  # Use Trapezoid Integration
+  auipc_per_draw <- probability_shifts %>%
+    group_by(.draw) %>%
+    arrange(dilution, .by_group = TRUE) %>%
+    summarise(
+      auipc_raw = trapz(x = dilution, y = probability),
+      x_min = min(dilution),
+      x_max = max(dilution),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      auipc_norm = auipc_raw / (x_max - x_min)
+    )
+
+  # Plot the Posterior AUIPC
+  auipc_distribution <-
+    ggplot(data = auipc_per_draw,aes(x = auipc_norm))+
+    geom_histogram(fill = "lightblue",colour = "black")+
+    theme_minimal()+
+    labs(
+      title = "Posterior Distribution of the Area Under Infection Probability Curve",
+      x  = "AUIPC",
+      y  = "Count"
+    )
 
   # Return plots
   return(list(
