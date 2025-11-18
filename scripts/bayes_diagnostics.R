@@ -70,80 +70,10 @@ bayes_diagnostics <- function(model){
     posterior_shifts = sens_shifts
   )
 
-  #### Model Comparison ####
-
-  ## Measure of Explained Variance R2
-
-  # Collect the R2 Data
-  r2_distribution_data <- as.data.frame(
-    bayes_R2(bernoulli_bayes_model,summary = FALSE))
-
-  # Plot R2 Histogram
-  r2_histogram <-
-    ggplot(aes(x = R2))+
-    geom_histogram(fill = "lightblue")+
-    theme_minimal()+
-    labs(
-      title = "Posterior Bayesian R2 Distribution",
-      x = "R2",
-      y = "Count"
-    )
-
-  ## Measure of Errors
-
-  # Collect the Posterior Expected  Errors
-  error <- predictive_error(bernoulli_bayes_model,method = "posterior_epred")
-
-  # Compute Bayesian RMSE
-  bayes_rmse_data <- data.frame(sqrt(rowMeans(error^2))) %>%
-    rename(
-      RMSE = "sqrt.rowMeans.error.2.."
-    )
-
-  # Histogram of Bayesian RMSE
-  rmse_plot <-
-    ggplot(data = bayes_rmse_data,aes(x = RMSE))+
-    geom_histogram(fill = "lightblue")+
-    labs(
-      x = "RMSE",
-      y = "Count",
-      title = "Posterior RMSE Distribution"
-    )+
-    theme_minimal()
-
-
-  ## Measures of LPD
-
-  ## Compute Loo
-  loo_model <- loo(
-    model,
-    save_psis = TRUE
-    )
-
-  y <- as.numeric(model$data$outcome)
-  yrep <- posterior_predict(model, draws = 2000)
-
-  ## Loo QQ Plot
-  loo_pit_qq <- ppc_loo_pit_qq(
-    y = y,
-    yrep = yrep,
-    psis_object = loo_model$psis_object
-  ) +
-    theme_minimal() +
-    labs(
-      title = "LOO-PIT Q–Q Plot",
-      subtitle = "Checks calibration for discrete outcomes",
-      x = "Theoretical PIT quantiles",
-      y = "Empirical PIT quantiles"
-    )
-
   # Return
   return(list(
     convergence_diagnostics = convergence_diagnostics,
     posterior_predictive_checks = posterior_predictive_checks,
-    prior_sensitivity = prior_sensitivity,
-    loo_pit_qq = loo_pit_qq,
-    psis_plot = plot(loo_model),
-    bayes_r2 = list(r2_data = r2_distribution_data,r2_plot = r2_histogram)
-  ))
+    prior_sensitivity = prior_sensitivity
+    ))
 }
