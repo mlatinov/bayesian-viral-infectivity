@@ -12,7 +12,8 @@ bernoulli_bayes <- function(data,priors){
 
   # Run the model
   bernoulli_model <- brm(
-    formula = formula,data = data,
+    formula = formula,
+    data = data,
     family = bernoulli(),
     prior = priors,
     chains = 4,
