@@ -4,7 +4,7 @@ simulate_virus <- function(
     baseline_infectivity_sd,
     beta_coef_mean,
     beta_coef_sd,
-    n_draws = 1000
+    n_draws = 2
 ){
 
   # X_i is the Virus dilution  Which is in the log scale with range from -1 to -7
@@ -13,10 +13,10 @@ simulate_virus <- function(
   ## The Parameters for the P_i equation comes from normal distribution ##
 
   # Intercept The probability of infection when x_i = 0
-  a <- rnorm(n = 1000, mean = baseline_infectivity_mean,baseline_infectivity_sd = 2)
+  a <- rnorm(n = 10, mean = baseline_infectivity_mean,baseline_infectivity_sd)
 
   # Coef for the impact of the dilution on the probability of infection
-  b <- rnorm(n = 1000, mean = beta_coef_mean,beta_coef_sd = 2)
+  b <- rnorm(n = 10, mean = beta_coef_mean,beta_coef_sd)
 
   ## The Parameter P_i can be expressed as logistic linear equation
   p_matrix <- sapply(1:n_draws, function(i) 1 / (1 + exp(-(a[i] + b[i] * x_i))))
