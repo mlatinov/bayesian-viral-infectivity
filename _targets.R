@@ -13,14 +13,14 @@ list(
 
   #### Simulate Viruses ####
 
-  # Simulate Highly Infection Rate Virus even in high dilutions
+  # Simulate High Infection Rate Virus even in high dilutions
   tar_target(
     name = virus_A,
     command = simulate_virus(
-      baseline_infectivity_mean = 3, # baseline probability ~ 0.95
-      baseline_infectivity_sd = 3,
-      beta_coef_mean = 0.5, # dilution does not reduce infection rates much
-      beta_coef_sd = 3
+      baseline_infectivity_mean = 5, # baseline probability
+      baseline_infectivity_sd = 0.5,
+      beta_coef_mean = 1.2, # dilution does not reduce infection rates much
+      beta_coef_sd = 0.15
         )
     ),
 
@@ -28,10 +28,23 @@ list(
   tar_target(
     name = virus_B,
     command = simulate_virus(
-      baseline_infectivity_mean = 0,  # baseline probability ~ 0.50
-      baseline_infectivity_sd = 3,
-      beta_coef_mean = 1 , # dilution does reduce infection rates
-      beta_coef_sd = 3
+      baseline_infectivity_mean = 4.7, # baseline probability
+      baseline_infectivity_sd = 0.5,
+      beta_coef_mean = 1.8 , # dilution does reduce infection rates
+      beta_coef_sd = 0.15
+    )
+  ),
+
+  # Simulate High Infection Rate Virus effected by imaginary variable Gamma
+  tar_target(
+    name = virus_G,
+    command = simulate_virus_v2(
+      baseline_infectivity_mean = 5, # baseline probability
+      baseline_infectivity_sd = 0,5,
+      beta_coef_mean = 1.2, # dilution does not reduce infection rates much
+      beta_coef_sd = 0.15,
+      gamma_coef_mean = 0.5, # Imaginary variable gamma reduces the infection rates
+      gamma_coef_sd = 0.15
     )
   ),
 
@@ -45,12 +58,20 @@ list(
   ),
 
   ## Check Generated data
+
+  # Check the AB Viruses
   tar_target(
-    name = simulation_data_check,
-    command = lappy(simulation_virus_AB,check_generated_virus)
+    name = simulation_data_check_AB,
+    command = lapply(simulation_virus_AB,check_generated_virus)
   ),
 
-  #### Load the Experimental Data ####
+  # Check the imaginary G Virus
+  tar_target(
+    name = simulation_data_check_G,
+    command = check_generated_virus(virus_G)
+  ),
+
+  #### Load the Experimental Datasets ####
   tar_target(
     name = experimental_data,
     command = load_experiment()
@@ -71,58 +92,52 @@ list(
       )
   ),
 
-  #### Classic GLM ####
-  tar_target(
-    name = glm_model,
-    command = glm_modeling_f(
-      data = as.data.frame(clean_experimental_data[[1]])
-      )
-  ),
-
   #### Bayes Models #####
 
-  #### Bernoulli Bayes Model Simulation Virus A ####
+  #### Bernoulli Bayes Model Simulation Virus AB ####
   tar_target(
-    name = bernoulli_bayes_model_sim_virus_A,
-    command = bernoulli_bayes(
-      data = virus_A,
+    name = bernoulli_bayes_model_sim_virus_AB,
+    command = lapply(
+      simulation_virus_AB,
+      function(df) {
+        bernoulli_bayes(
+          data   = df,
+          priors = c(
+            prior(normal(0,3), class = "b", coef = "virus_dilution"),
+            prior(normal(2,2), class = "Intercept")
+          )
+        )
+      }
+    )
+  ),
+
+  #### Bernoulli Bayes Model Simulation Virus G ####
+  tar_target(
+    name = bernoulli_bayes_model_sim_virus_G,
+    command = bernoulli_bayes_G(
+      data = virus_G,
       priors = c(
-        # For each increase of log(virus_dilution) the chance of virus infection drops by
-        prior(normal(0, 3), class = "b", coef = "virus_dilution"),
-        # When virus_dilution = 0 The log odds of virus infection
-        prior(normal(2,2),class = "Intercept")
+        prior(normal(0,3), class = "b", coef = "virus_dilution"),
+        prior(normal(0,3), class = "b", coef = "imaginary_var"),
+        prior(normal(2,2), class = "Intercept")
       )
     )
   ),
 
-  #### Bernoulli Bayes Model Simulation Virus A ####
-  tar_target(
-    name = bernoulli_bayes_model_sim_virus_B,
-    command = bernoulli_bayes(
-      data = virus_B,
-      priors = c(
-        # For each increase of log(virus_dilution) the chance of virus infection drops by
-        prior(normal(0, 3), class = "b", coef = "virus_dilution"),
-        # When virus_dilution = 0 The log odds of virus infection
-        prior(normal(2,2),class = "Intercept")
-      )
-    )
-  ),
-
-  ### Prior Predictive Simulation ###
+  ### Prior Predictive Simulation for the Experimental Data  ###
   tar_target(
     name = pp_sim_bernoulli,
     command = pp_simualtion_bernoulli(
       data = as.data.frame(clean_experimental_data[[1]]),
       priors = c(
         # For each increase of log(virus_dilution) the chance of virus infection drops
-        prior(normal(0, 3), class = "b", coef = "virus_dilution"),
+        prior(normal(0,3), class = "b", coef = "virus_dilution"),
         # When virus_dilution = 0 The log odds of virus infection
         prior(normal(2,2),class = "Intercept")
       ))
   ),
 
-  ## Inspect Prior Predictive Simulation model ##
+  ## Inspect Prior Predictive Simulation model for the Experimental Data ##
   tar_target(
     name = pp_simualtion_inspections,
     command = inspect_simulation(pp_sim_bernoulli)
@@ -135,37 +150,33 @@ list(
       data = as.data.frame(clean_experimental_data[[1]]),
       priors = c(
         # For each increase of log(virus_dilution) the chance of virus infection drops by
-        prior(normal(0, 3), class = "b", coef = "virus_dilution"),
+        prior(normal(0,3), class = "b", coef = "virus_dilution"),
         # When virus_dilution = 0 The log odds of virus infection
         prior(normal(2,2),class = "Intercept")
         )
       )
   ),
 
-  #### Bernoulli Bayes Model with Combined datasets ####
+  #### Bernoulli Bayes Model with Combined Experimental datasets ####
   tar_target(
     name = bernoulli_bayes_model_v2,
     command = bernoulli_bayes(
       data = data_combined,
       priors = c(
         # For each increase of log(virus_dilution) the chance of virus infection drops by
-        prior(normal(0, 3), class = "b", coef = "virus_dilution"),
+        prior(normal(0,3), class = "b", coef = "virus_dilution"),
         # When virus_dilution = 0 The log odds of virus infection
         prior(normal(2,2),class = "Intercept")
         )
       )
   ),
 
-  ## Model Diagnostics for Bayes Model trained on Simulation Virus A  ##
+  ## Model Diagnostics for Bayes Model trained on Simulation Virus AB  ##
   tar_target(
-    name = bernoulli_model_diagnostics_sim_virus_A,
-    command = bayes_diagnostics(bernoulli_bayes_model_sim_virus_A)
-  ),
-
-  ## Model Diagnostics for Bayes Model trained on Simulation Virus B ##
-  tar_target(
-    name = bernoulli_model_diagnostics_sim_virus_B,
-    command = bayes_diagnostics(bernoulli_bayes_model_sim_virus_B)
+    name = bernoulli_model_diagnostics_sim_virus_AB,
+    command = lapply(
+      bernoulli_bayes_model_sim_virus_AB,bayes_diagnostics
+      )
   ),
 
   ## Model Diagnostics for Bayes Model trained on Experimental data 1 ##
@@ -180,21 +191,19 @@ list(
     command = bayes_diagnostics(bernoulli_bayes_model_v2)
   ),
 
-  ## Model Insights for Bayes Model trained on Simulation Virus A  ##
+  ## Model Insights for Bayes Model trained on Simulation Virus AB ##
   tar_target(
-    name = bernoulli_model_insights_sim_virus_A,
-    command = bayes_insights(
-      model = bernoulli_bayes_model_sim_virus_A,
-      data = virus_A
-    )
-  ),
-
-  ## Model Insights for Bayes Model trained on Simulation Virus B  ##
-  tar_target(
-    name = bernoulli_model_insights_sim_virus_B,
-    command = bayes_insights(
-      model = bernoulli_bayes_model_sim_virus_B,
-      data = virus_B
+    bernoulli_model_insights_sim_virus_AB,
+    mapply(
+      function(model, data) {
+        bayes_insights(
+          model = model,
+          data  = data
+        )
+      },
+      model = bernoulli_bayes_model_sim_virus_AB,
+      data  = simulation_virus_AB,
+      SIMPLIFY = FALSE
     )
   ),
 
@@ -233,14 +242,12 @@ list(
       diagnostics = list(
         bernoulli_model_diagnostics,
         bernoulli_model_diagnostics_2,
-        bernoulli_model_diagnostics_sim_virus_A,
-        bernoulli_model_diagnostics_sim_virus_B
+        bernoulli_model_diagnostics_sim_virus_AB
         ),
       insights = list(
         bernoulli_model_insights,
         bernoulli_model_insights_2,
-        bernoulli_model_insights_sim_virus_A,
-        bernoulli_model_insights_sim_virus_B
+        bernoulli_model_insights_sim_virus_AB,
       ),
       comparison = list(model_compare)
     )
