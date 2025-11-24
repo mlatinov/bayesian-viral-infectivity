@@ -150,6 +150,11 @@ bayes_insights <- function(model,data){
 
   # Return plots
   return(list(
+    data = list(
+      post_draws = posterior_draws,
+      prob_data = probability_shifts,
+      pauipc = auipc_per_draw
+    ),
     condititional_prob_shits = condititional_prob_shits,
     error_bar = error_bar,
     table_virus_effect = table_virus_effect,
