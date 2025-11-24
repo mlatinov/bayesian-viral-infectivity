@@ -40,10 +40,10 @@ list(
     name = virus_G,
     command = simulate_virus_v2(
       baseline_infectivity_mean = 5, # baseline probability
-      baseline_infectivity_sd = 0,5,
-      beta_coef_mean = 1.2, # dilution does not reduce infection rates much
+      baseline_infectivity_sd = 0.5,
+      beta_coef_mean = 1.2,   # dilution does not reduce infection rates much
       beta_coef_sd = 0.15,
-      gamma_coef_mean = 0.5, # Imaginary variable gamma reduces the infection rates
+      gamma_coef_mean = -0.5, # Imaginary variable gamma reduces the infection rates
       gamma_coef_sd = 0.15
     )
   ),
@@ -171,29 +171,27 @@ list(
       )
   ),
 
-  ## Model Diagnostics for Bayes Model trained on Simulation Virus AB  ##
+  #### Append All the models in one list ####
   tar_target(
-    name = bernoulli_model_diagnostics_sim_virus_AB,
-    command = lapply(
-      bernoulli_bayes_model_sim_virus_AB,bayes_diagnostics
-      )
+    name = all_models,
+    command = append(
+      bernoulli_bayes_model_sim_virus_AB,
+      list(
+        virus_G = bernoulli_bayes_model_sim_virus_G,
+        experimental = bernoulli_bayes_model,
+        experimental_full = bernoulli_bayes_model_v2
+      ))
   ),
 
-  ## Model Diagnostics for Bayes Model trained on Experimental data 1 ##
+  ## Model Diagnostics for Bayes Models  ###
   tar_target(
     name = bernoulli_model_diagnostics,
-    command = bayes_diagnostics(bernoulli_bayes_model)
-  ),
-
-  ## Model Diagnostics for Bayes Model trained Combined data ##
-  tar_target(
-    name = bernoulli_model_diagnostics_2,
-    command = bayes_diagnostics(bernoulli_bayes_model_v2)
+    command = lapply(all_models,bayes_diagnostics)
   ),
 
   ## Model Insights for Bayes Model trained on Simulation Virus AB ##
   tar_target(
-    bernoulli_model_insights_sim_virus_AB,
+    name = bernoulli_model_insights_sim_virus_AB,
     mapply(
       function(model, data) {
         bayes_insights(
@@ -206,6 +204,7 @@ list(
       SIMPLIFY = FALSE
     )
   ),
+
 
   ## Model Insights for Bayes Model trained on Experimental data 1 ##
   tar_target(
@@ -229,25 +228,25 @@ list(
   tar_target(
     name = model_compare,
     command =
-      lapply(list(bernoulli_bayes_model,bernoulli_bayes_model_v2),compare_bayes_models)
+      lapply(
+        list(bernoulli_bayes_model,bernoulli_bayes_model_v2),
+        compare_bayes_models
+        )
     ),
 
   #### Render Reports ####
 
-  ## Combine everything into one tibble
+  ## Combine everything into one list
   tar_target(
     name = report_data,
-    command = tibble(
-      name = c("Basic_model","Full_model","Simulation_A","Simulation_B"),
+    command = list(
       diagnostics = list(
-        bernoulli_model_diagnostics,
-        bernoulli_model_diagnostics_2,
-        bernoulli_model_diagnostics_sim_virus_AB
+        bernoulli_model_diagnostics
         ),
       insights = list(
         bernoulli_model_insights,
         bernoulli_model_insights_2,
-        bernoulli_model_insights_sim_virus_AB,
+        bernoulli_model_insights_sim_virus_AB
       ),
       comparison = list(model_compare)
     )
