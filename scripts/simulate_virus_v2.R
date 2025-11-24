@@ -15,26 +15,32 @@ simulate_virus_v2 <- function(
   ## The Parameters for the P_i equation comes from normal distribution ##
 
   # Intercept The probability of infection when x_i = 0
-  a <- rnorm(n = 10, mean = baseline_infectivity_mean,baseline_infectivity_sd)
+  a <- rnorm(n = n_draws, mean = baseline_infectivity_mean,baseline_infectivity_sd)
 
   # Coef for the impact of the dilution on the probability of infection
-  b <- rnorm(n = 10, mean = beta_coef_mean,beta_coef_sd)
+  b <- rnorm(n = n_draws, mean = beta_coef_mean,beta_coef_sd)
+
+  # Random Imaginary variable
+  c <- rnorm(n = n_draws, mean = gamma_coef_mean, sd = gamma_coef_sd)
 
   # Coef for the impact of third imaginary variable Gamma on the probability of infection
-  g <- rnorm(n = 10, mean = gamma_coef_mean,gamma_coef_sd)
+  g_values <- rnorm(n = length(x_i) * n_draws, mean = 0, sd = 1)
 
   ## The Parameter P_i can be expressed as logistic linear equation
-  p_matrix <- sapply(1:n_draws, function(i) 1 / (1 + exp(-(a[i] + b[i] * x_i  + g[i]))))
+  p_matrix <- sapply(1:n_draws, function(i) {
+    idx <- ((i - 1) * length(x_i) + 1):(i * length(x_i))
+    1 / (1 + exp(-(a[i] + b[i] * x_i + c[i] * g_values[idx])))
+  })
 
   ## The prob of virus infection comes from Bernoulli Distribution ##
   outcome_matrix <- apply(p_matrix, 2, function(p) rbinom(length(p), 1, p))
 
   ## Combine in dataframe with the Outcome and the Virus Dilution ##
   virus_data <- data.frame(
-    virus_dilution = rep(x_i, times = n_draws),
-    imaginary_var = rep(g, each = length(x_i)),
-    repetition = rep(1:n_draws, each = length(x_i)),
-    outcome = as.vector(outcome_matrix)
+    virus_dilution = rep(x_i, n_draws),
+    imaginary_var = g_values,
+    repetition     = rep(1:n_draws, each = length(x_i)),
+    outcome        = as.vector(outcome_matrix)
   )
 
   ## Return the dataframe
