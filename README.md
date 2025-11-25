@@ -16,7 +16,7 @@ In the experiments, cells were exposed to viral dilutions ranging from $10^{-1}$
 
 ---
 
-## Mathematical Model
+## Mathematical Model 1
 
 We model the binary infection outcomes as following a Bernoulli distribution with parameter $p_i$:
 
@@ -37,4 +37,71 @@ In the Bayesian framework, we specify prior distributions for the parameters:
 
 $$\alpha \sim \text{Normal}(\mu_\alpha, \sigma_\alpha)$$
 $$\beta \sim \text{Normal}(\mu_\beta, \sigma_\beta)$$
+
+## Hierarchical Model for the Different Experiments
+
+This section describes the hierarchical structure used to model the variation between different experiments in the project.
+
+Each experiment $j$ has its own intercept $\alpha_j$ and slope $\beta_j$. These experiment-specific parameters are modeled hierarchically using a multivariate normal (MVN) distribution:
+
+$$\begin{pmatrix}
+\alpha_j \\
+\beta_j
+\end{pmatrix}
+\sim
+\text{Normal}\\left(
+\begin{pmatrix}
+\alpha \\
+\beta
+\end{pmatrix},
+\\Sigma
+\right)$$
+
+where:
+
+$\alpha$ is the population-level (overall) intercept
+
+$\beta$ is the population-level (overall) slope
+
+$\Sigma$ is the $2 \times 2$ covariance matrix describing between-experiment variation
+
+Covariance Matrix ($\Sigma$)
+
+The covariance matrix $\Sigma$ is parameterized as:
+
+$$\Sigma =
+\begin{pmatrix}
+\sigma_\alpha^2 &
+\rho \, \sigma_\alpha \sigma_\beta \\
+\rho \, \sigma_\alpha \sigma_\beta &
+\sigma_\beta^2
+\end{pmatrix}$$
+
+where:
+
+$\sigma_\alpha$ is the standard deviation of experiment-specific intercepts
+
+$\sigma_\beta$ is the standard deviation of experiment-specific slopes
+
+$\rho$ is the correlation between intercepts and slopes across experiments
+
+### Hyperparameter Priors
+
+Population Mean Parameters:
+
+$$\alpha \sim \text{Normal}(\mu_\alpha, \sigma_\alpha)$$
+
+$$\beta \sim \text{Normal}(\mu_\beta, \sigma_\beta)$$
+
+Population Standard Deviation Parameters (Scale):
+
+$$\sigma_\alpha \sim \text{Half-Normal}(0, \tau_\alpha)$$
+
+$$\sigma_\beta \sim \text{Half-Normal}(0, \tau_\beta)$$
+
+Correlation Parameter:
+
+$$\rho \sim \text{LKJCorr}(2)$$
+
+
 
