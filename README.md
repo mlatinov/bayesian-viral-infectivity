@@ -49,7 +49,7 @@ $$\begin{pmatrix}
 \beta_j
 \end{pmatrix}
 \sim
-\text{Normal}\\left(
+\text{MVN}\\left(
 \begin{pmatrix}
 \alpha \\
 \beta
