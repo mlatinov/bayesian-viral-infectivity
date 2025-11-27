@@ -20,6 +20,7 @@ bernoulli_bayes <- function(data,priors){
     iter = 4000,
     seed = 123
   )
+
   # Save the model and delete the previous one if exists
   if (file.exists("bernoulli_model.rds")) {
     file.remove("bernoulli_model.rds")
