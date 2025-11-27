@@ -211,13 +211,45 @@ list(
   # SBC For Combined Data Bayes Model
   tar_target(
     name = sbc_bernoulli_combined,
-    command = sbc_combined()
+    command = sbc_combined(
+      # BRMS Generator
+      brms_generator =
+        SBC_generator_brms(
+          formula = outcome ~ virus_dilution,
+          family = brms::bernoulli(link = "logit"),
+          data = data_combined,
+          prior = c(
+            prior(normal(0,0.7), class = "b", coef = "virus_dilution"),
+            prior(normal(0,1.5), class = "Intercept")
+          )
+        ),
+      # Number of Simulations
+      n_sim = 100
+    ),
+    packages = "brms"
   ),
 
   # SBC For Hierarchical Bayes Model
   tar_target(
     name = sbc_bernoulli_hierarchical,
-    command = sbc_hierarchical()
+    command = sbc_combined(
+      # BRMS Generator
+      brms_generator =
+        SBC_generator_brms(
+          formula =  outcome ~ virus_dilution + (virus_dilution | experiment ),
+          family = brms::bernoulli(link = "logit"),
+          data = data_combined,
+          priors = c(
+            prior(normal(0,0.7), class = "b"),                   # slope coefficients
+            prior(normal(0,1.5), class = "Intercept"),           # population intercept
+            prior(exponential(2), class = "sd"),                 # group-level SD
+            prior(lkj(0.5), class = "cor", group = "experiment") # correlation
+          )
+        ),
+      # Number of Simulations
+      n_sim = 100
+    ),
+    packages = "brms"
   ),
 
   #### Full Bayesian Models ####
@@ -256,9 +288,9 @@ list(
     command = bernoulli_hierarchical(
       data = data_combined,
       priors = c(
-        prior(normal(0,3), class = "b"),                   # slope coefficients
-        prior(normal(2,2), class = "Intercept"),           # population intercept
-        prior(exponential(2), class = "sd"),               # group-level SD
+        prior(normal(0,3), class = "b"),                      # slope coefficients
+        prior(normal(2,2), class = "Intercept"),              # population intercept
+        prior(exponential(2), class = "sd"),                  # group-level SD
         prior(lkj(0.5), class = "cor", group = "experiment")  # correlation
       )
     )
@@ -320,6 +352,15 @@ list(
       )
   ),
 
+  # Model Insights for Bayes Model G
+  tar_target(
+    name = bernoulli_model_insights_g,
+    command = bayes_insights_3d(
+      data = virus_G,
+      model = bernoulli_bayes_model_sim_virus_G
+    )
+  ),
+
   #### Model Compare ####
   tar_target(
     name = model_compare,
@@ -347,13 +388,18 @@ list(
         prior_simulations = pp_simualtion_inspections),
       # Models Diagnostics
       diagnostics = list(
-        bernoulli_model_diagnostics
+        # General Diagnostics
+        bernoulli_model_diagnostics,
+        # SBC Protocol
+        sbc_bernoulli_combined,
+        sbc_bernoulli_hierarchical
         ),
       # Models insights
       insights = list(
         bernoulli_model_insights,
         bernoulli_model_insights_2,
-        bernoulli_model_insights_sim_virus_AB
+        bernoulli_model_insights_sim_virus_AB,
+        bernoulli_model_insights_g
       ),
       # Model Comparisons
       comparison = list(model_compare)
