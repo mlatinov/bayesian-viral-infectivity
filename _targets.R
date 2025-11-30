@@ -13,25 +13,85 @@ list(
 
   #### Simulate Viruses ####
 
-  # Simulate High Infection Rate Virus even in high dilutions
+  # Scenario 1 Simulate High Infection Rate Virus
   tar_target(
-    name = virus_A,
+    name = virus_high_infection,
     command = simulate_virus(
       baseline_infectivity_mean = 5, # baseline probability
       baseline_infectivity_sd = 0.5,
-      beta_coef_mean = 1.2, # dilution does not reduce infection rates much
-      beta_coef_sd = 0.15
-        )
+      beta_coef_mean = 1.2,
+      beta_coef_sd = 0.15,
+      n = 200,
+      n_draws = 10
+      )
     ),
 
-  # Simulate Low Infection Rate Virus even in low dilutions
+  # Scenario 2 Simulate Low Infection Rate Virus
   tar_target(
-    name = virus_B,
+    name = virus_low_infection,
     command = simulate_virus(
-      baseline_infectivity_mean = 4.7, # baseline probability
+      baseline_infectivity_mean = 2.5, # baseline probability
       baseline_infectivity_sd = 0.5,
-      beta_coef_mean = 1.8 , # dilution does reduce infection rates
-      beta_coef_sd = 0.15
+      beta_coef_mean = 1.2 ,
+      beta_coef_sd = 0.15,
+      n = 200,
+      n_draws = 10
+    )
+  ),
+
+  # Scenario 3 a High Infection Rate Virus that is not strongly effected by the dilution
+  tar_target(
+    name = virus_not_effected,
+    command = simulate_virus(
+      baseline_infectivity_mean = 5, # baseline probability
+      baseline_infectivity_sd = 0.5,
+      beta_coef_mean = 0.5 ,
+      beta_coef_sd = 0.15,
+      n = 200,
+      n_draws = 10
+    )
+  ),
+
+  # Scenario 3 Resistant virus : Hard to kill, almost unaffected by dilution
+  tar_target(
+    name = virus_resistant,
+    command = simulate_virus(
+      baseline_infectivity_mean = 4, # baseline probability
+      baseline_infectivity_sd = 0.5,
+      beta_coef_mean = 0.1 ,
+      beta_coef_sd = 0.15,
+      n = 200,
+      n_draws = 10
+    )
+  ),
+
+  # Scenario 4 Seasonal Virus The effect of dilution is dependent on the draw
+  # and is oscillating with amplitude of parameter : seasonal_variation
+  tar_target(
+    name = virus_seasonal,
+    command = seasonal_virus(
+      baseline_infectivity_mean = 4, # baseline probability
+      baseline_infectivity_sd = 0.5,
+      beta_coef_mean = 1.2 ,
+      beta_coef_sd = 0.15,
+      seasonal_variation = 10, # amplitude of seasonal variation
+      n = 200,
+      n_draws = 10
+    )
+  ),
+
+  # Scenario 5 Random Walk : Virus with high possibility of mutations expressed as
+  # Variation added to the beta coming from normal distribution
+  tar_target(
+    name = virus_mutant,
+    command = simulate_mutation(
+      baseline_infectivity_mean = 4, # baseline probability
+      baseline_infectivity_sd = 0.5,
+      beta_coef_mean = 1.2 ,
+      beta_coef_sd = 0.15,
+      mutation_effect_mean = 0.2, # Mean effect of the mutation
+      mutation_effect_sd = 0.5, # Var of the effect of mutation
+      n = 24
     )
   ),
 
@@ -64,19 +124,22 @@ list(
 
   ## Combine the datasets in a list ##
   tar_target(
-    name = simulation_virus_AB,
+    name = simulation_viruses,
     command = list(
-      virus_A = virus_A,
-      virus_B = virus_B
+      virus_high_infection = virus_high_infection,
+      virus_low_infection = virus_low_infection,
+      virus_not_effected = virus_not_effected,
+      virus_seasonal = virus_seasonal,
+      virus_mutant = virus_mutant
     )
   ),
 
   #### Check Generated data ####
 
-  # Check the AB Viruses
+  # Check the Simulation of  Viruses
   tar_target(
-    name = simulation_data_check_AB,
-    command = lapply(simulation_virus_AB,check_generated_virus)
+    name = simulation_data_check_viruses,
+    command = lapply(simulation_viruses,check_generated_virus)
   ),
 
   # Check the imaginary G Virus
@@ -118,17 +181,17 @@ list(
 
   #### Bayes Models Parameter Recovery #####
 
-  # Bernoulli Bayes Model Simulation Virus AB #
+  # Bernoulli Bayes Model Simulation Virus #
   tar_target(
-    name = bernoulli_bayes_model_sim_virus_AB,
+    name = bernoulli_bayes_model_sim_viruses,
     command = lapply(
-      simulation_virus_AB,
+      simulation_viruses,
       function(df) {
         bernoulli_bayes(
           data   = df,
           priors = c(
-            prior(normal(0,3), class = "b", coef = "virus_dilution"),
-            prior(normal(2,2), class = "Intercept")
+            prior(normal(2,1), class = "b", coef = "virus_dilution"),
+            prior(normal(4,2), class = "Intercept")
           )
         )
       }
@@ -171,9 +234,9 @@ list(
       data = as.data.frame(clean_experimental_data[[1]]),
       priors = c(
         # For each increase of log(virus_dilution) the chance of virus infection drops
-        prior(normal(0,3), class = "b", coef = "virus_dilution"),
+        prior(normal(2,1), class = "b", coef = "virus_dilution"),
         # When virus_dilution = 0 The log odds of virus infection
-        prior(normal(2,2),class = "Intercept")
+        prior(normal(4,2),class = "Intercept")
       ))
   ),
 
@@ -219,8 +282,8 @@ list(
           family = brms::bernoulli(link = "logit"),
           data = data_combined,
           prior = c(
-            prior(normal(0,0.7), class = "b", coef = "virus_dilution"),
-            prior(normal(0,1.5), class = "Intercept")
+            prior(normal(2,1), class = "b", coef = "virus_dilution"),
+            prior(normal(4,2), class = "Intercept")
           )
         ),
       # Number of Simulations
@@ -260,10 +323,8 @@ list(
     command = bernoulli_bayes(
       data = as.data.frame(clean_experimental_data[[1]]),
       priors = c(
-        # For each increase of log(virus_dilution) the chance of virus infection drops by
-        prior(normal(0,3), class = "b", coef = "virus_dilution"),
-        # When virus_dilution = 0 The log odds of virus infection
-        prior(normal(2,2),class = "Intercept")
+        prior(normal(2,1), class = "b", coef = "virus_dilution"),
+        prior(normal(4,2), class = "Intercept")
         )
       )
   ),
@@ -275,9 +336,9 @@ list(
       data = data_combined,
       priors = c(
         # For each increase of log(virus_dilution) the chance of virus infection drops by
-        prior(normal(0,3), class = "b", coef = "virus_dilution"),
+        prior(normal(2,1), class = "b", coef = "virus_dilution"),
         # When virus_dilution = 0 The log odds of virus infection
-        prior(normal(2,2),class = "Intercept")
+        prior(normal(4,2),class = "Intercept")
         )
       )
   ),
@@ -300,7 +361,7 @@ list(
   tar_target(
     name = all_models,
     command = append(
-      bernoulli_bayes_model_sim_virus_AB,
+      bernoulli_bayes_model_sim_viruses,
       list(
         hierarchical_model = bernoulli_hierarchical_model,
         virus_G = bernoulli_bayes_model_sim_virus_G,
@@ -319,7 +380,7 @@ list(
 
   # Model Insights for Bayes Model trained on Simulation Virus AB ##
   tar_target(
-    name = bernoulli_model_insights_sim_virus_AB,
+    name = bernoulli_model_insights_sim_viruses,
     mapply(
       function(model, data) {
         bayes_insights(
@@ -327,12 +388,11 @@ list(
           data  = data
         )
       },
-      model = bernoulli_bayes_model_sim_virus_AB,
-      data  = simulation_virus_AB,
+      model = bernoulli_bayes_model_sim_viruses,
+      data  = simulation_viruses,
       SIMPLIFY = FALSE
     )
   ),
-
 
   # Model Insights for Bayes Model trained on Experimental data 1 ##
   tar_target(
@@ -371,22 +431,39 @@ list(
         )
     ),
 
+  ## Combine All model Insights in a list
+  tar_target(
+    name = model_insight_list,
+    command = list(
+      model_g = bernoulli_model_insights_g,
+      full_model = bernoulli_model_insights_2,
+      half_model = bernoulli_model_insights,
+      scenario_model = bernoulli_model_insights_sim_viruses
+    )
+  ),
+
+  #### Additional Combined model plots ####
+  tar_target(
+    name = extra_plots,
+    command = extra_model_plots(model_insight_list)
+  ),
+
   #### Render Reports ####
 
   ## Combine everything into one list
   tar_target(
     name = report_data,
     command = list(
-      # Data Simulation checks
+      ## Data Simulation checks
       data_simulation_checks = list(
-        virusAB = simulation_data_check_AB,
-        virus_G = simulation_data_check_G,
+        simulation_data_check_viruses,
+        simulation_data_check_G,
         simulation_data_check_hierarchical
       ),
-      # Prior Predictive Simulations for the Real Models
+      ## Prior Predictive Simulations for the Real Models
       prior_simulations = list(
         prior_simulations = pp_simualtion_inspections),
-      # Models Diagnostics
+      ## Models Diagnostics
       diagnostics = list(
         # General Diagnostics
         bernoulli_model_diagnostics,
@@ -394,16 +471,19 @@ list(
         sbc_bernoulli_combined,
         sbc_bernoulli_hierarchical
         ),
-      # Models insights
+      ## Models insights
       insights = list(
         bernoulli_model_insights,
         bernoulli_model_insights_2,
-        bernoulli_model_insights_sim_virus_AB,
+        bernoulli_model_insights_sim_viruses,
         bernoulli_model_insights_g
       ),
-      # Model Comparisons
-      comparison = list(model_compare)
-    )
+      ## Model Comparisons
+      comparison = list(model_compare),
+
+      ## Extra plots
+      extra_plots = extra_plots
+    ),
   ),
 
   ## Report summarizing the results
@@ -414,3 +494,5 @@ list(
     params = list(data = report_data)
   )
 )
+
+
