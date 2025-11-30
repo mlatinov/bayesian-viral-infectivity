@@ -11,7 +11,7 @@ bayes_insights_3d <- function(model,data){
   library(MASS)
 
   #### Posterior Summaries for Virus infections ####
-  posterior_draws <- as_draws(bernoulli_bayes_model_sim_virus_G)
+  posterior_draws <- as_draws(model)
 
   ## Posterior Distributions on log odds scale for dilution ##
   posterior_log_odds_d <- mcmc_areas(
@@ -65,21 +65,21 @@ bayes_insights_3d <- function(model,data){
 
   ### Conditional Effect of Virus Infections and Virus Dilution ####
   contional_effect <- conditional_effects(
-    bernoulli_bayes_model_sim_virus_G,
+    model,
     prob = 0.88
   )
 
   # Create realistic dilution values from the data
   dilution_values <- seq(
-    min(virus_G$virus_dilution),
-    max(virus_G$virus_dilution),
+    min(data$virus_dilution),
+    max(data$virus_dilution),
     length.out = 10
   )
 
   # Create realistic imaginary values from the data
   imaginary <- seq(
-    min(virus_G$imaginary_var),
-    max(virus_G$imaginary_var),
+    min(data$imaginary_var),
+    max(data$imaginary_var),
     length.out = 10
   )
 
@@ -159,7 +159,7 @@ bayes_insights_3d <- function(model,data){
       names_from = imaginary,
       values_from = mean_prob
       ) %>%
-    select(-dilution) %>%
+    dplyr::select(-dilution) %>%
     as.matrix()
 
   # Axis
@@ -188,13 +188,12 @@ bayes_insights_3d <- function(model,data){
     data = list(
       post_draws = posterior_draws,
       prob_data = probability_shifts,
-      pauipc = auipc_per_draw
+      pauipc = auipc_per_draw_mc
     ),
-    condititional_prob_shits = condititional_prob_shits,
-    error_bar = error_bar,
+    probability_shifts = probability_shifts,
     table_virus_effect = table_virus_effect,
     contional_effect = contional_effect,
     posterior_histogram = posterior_histogram,
-    posterior_log_odds = posterior_log_odds
+    posterior_log_odds = posterior_log_odds_d
   ))
 }

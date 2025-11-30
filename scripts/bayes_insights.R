@@ -55,8 +55,7 @@ bayes_insights <- function(model,data){
 ### Conditional Effect of Virus Infections and Virus Dilution ####
   contional_effect <- conditional_effects(
     model,
-    prob = 0.88,
-    spaghetti = TRUE
+    prob = 0.88
     )
 
   # Create realistic dilution values from your data
@@ -119,6 +118,35 @@ bayes_insights <- function(model,data){
     theme_minimal()
 
 
+  #### EC50 ####
+
+  ## Compute EC50 as -Intercept / b_virus_dilution
+  ec_50<- probability_shifts %>%
+    mutate(
+      ec_50 = -b_Intercept / b_virus_dilution
+    )
+
+  ## EC50 Posterior Distribution
+  ec_50_posterior <-
+    ggplot(data = ec_50,aes(x = ec_50))+
+    geom_histogram(color = "black",fill = "lightblue")+
+    theme_minimal()+
+    labs(
+      title = "Posterior EC50 Distribution",
+      x = "EC50",
+      y = "Count"
+    )
+
+  ## EC50 Stat Table
+  ec_50_table <- ec_50 %>%
+    summarise(
+      mean_ec_50 = round(mean(ec_50),digits = 2),
+      sd_ec_50 = round(sd(ec_50),digits = 2),
+      upper_95 = round(quantile(ec_50,0.95),digits = 2),
+      lower_0.5 = round(quantile(ec_50,0.05),digits = 2)
+    )
+
+
   #### Experimental ####
 
   ## Compute the Posterior Distribution of the Area Under Infection Probability Curve
@@ -148,18 +176,25 @@ bayes_insights <- function(model,data){
       y  = "Count"
     )
 
-  # Return plots
+  # Return plots and tables
   return(list(
     data = list(
       post_draws = posterior_draws,
       prob_data = probability_shifts,
-      pauipc = auipc_per_draw
+      pauipc = auipc_per_draw,
+      ec50_raw = ec_50
     ),
-    condititional_prob_shits = condititional_prob_shits,
-    error_bar = error_bar,
-    table_virus_effect = table_virus_effect,
-    contional_effect = contional_effect,
-    posterior_histogram = posterior_histogram,
-    posterior_log_odds = posterior_log_odds
+    plots = list(
+      condititional_prob_shits = condititional_prob_shits,
+      error_bar = error_bar,
+      contional_effect = contional_effect,
+      posterior_histogram = posterior_histogram,
+      posterior_log_odds = posterior_log_odds,
+      ec_50_posterior = ec_50_posterior
+    ),
+    tables = list(
+      table_virus_effect = table_virus_effect,
+      ec_50_table = ec_50_table
+    )
     ))
 }

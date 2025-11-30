@@ -8,7 +8,7 @@ bernoulli_bayes <- function(data,priors){
   ### Formula ###
   formula <- brmsformula(
     outcome ~ virus_dilution,
-    family = bernoulli(link = "logit"))
+    family = brms::bernoulli(link = "logit"))
 
   # Run the model
   bernoulli_model <- brm(
