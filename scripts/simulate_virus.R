@@ -4,11 +4,15 @@ simulate_virus <- function(
     baseline_infectivity_sd,
     beta_coef_mean,
     beta_coef_sd,
-    n_draws = 2
+    n_draws = 2,
+    n = 58
 ){
 
+  ## Set Seed
+  set.seed(123)
+
   # X_i is the Virus dilution  Which is in the log scale with range from -1 to -7
-  x_i <- round(seq(from = -1 , to = -7,length.out = 1000),digits = 0)
+  x_i <- round(seq(from = -1 , to = -7,length.out = n),digits = 0)
 
   ## The Parameters for the P_i equation comes from normal distribution ##
 
