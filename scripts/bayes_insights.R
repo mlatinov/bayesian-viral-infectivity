@@ -190,6 +190,7 @@ bayes_insights <- function(model,data){
       contional_effect = contional_effect,
       posterior_histogram = posterior_histogram,
       posterior_log_odds = posterior_log_odds,
+      auipc_distribution = auipc_distribution,
       ec_50_posterior = ec_50_posterior
     ),
     tables = list(
