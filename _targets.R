@@ -26,13 +26,13 @@ list(
       )
     ),
 
-  # Scenario 2 Simulate Low Infection Rate Virus
+  # Scenario 2 Simulate Low Infection Rate Virus with higher sd in intercept
   tar_target(
     name = virus_low_infection,
     command = simulate_virus(
       baseline_infectivity_mean = 2.5, # baseline probability
-      baseline_infectivity_sd = 0.5,
-      beta_coef_mean = 1.2 ,
+      baseline_infectivity_sd = 0.8,
+      beta_coef_mean = 1.2,
       beta_coef_sd = 0.15,
       n = 200,
       n_draws = 10
@@ -43,8 +43,8 @@ list(
   tar_target(
     name = virus_not_effected,
     command = simulate_virus(
-      baseline_infectivity_mean = 5, # baseline probability
-      baseline_infectivity_sd = 0.5,
+      baseline_infectivity_mean = 4, # baseline probability
+      baseline_infectivity_sd = 0.8,
       beta_coef_mean = 0.5 ,
       beta_coef_sd = 0.15,
       n = 200,
@@ -57,7 +57,7 @@ list(
     name = virus_resistant,
     command = simulate_virus(
       baseline_infectivity_mean = 4, # baseline probability
-      baseline_infectivity_sd = 0.5,
+      baseline_infectivity_sd = 0.8,
       beta_coef_mean = 0.1 ,
       beta_coef_sd = 0.15,
       n = 200,
@@ -86,12 +86,13 @@ list(
     name = virus_mutant,
     command = simulate_mutation(
       baseline_infectivity_mean = 4, # baseline probability
-      baseline_infectivity_sd = 0.5,
+      baseline_infectivity_sd = 0.8,
       beta_coef_mean = 1.2 ,
       beta_coef_sd = 0.15,
-      mutation_effect_mean = 0.2, # Mean effect of the mutation
+      mutation_effect_mean = 0, # Mean effect of the mutation
       mutation_effect_sd = 0.5, # Var of the effect of mutation
-      n = 24
+      n = 200,
+      n_draws = 10
     )
   ),
 
@@ -129,6 +130,7 @@ list(
       virus_high_infection = virus_high_infection,
       virus_low_infection = virus_low_infection,
       virus_not_effected = virus_not_effected,
+      virus_resistant = virus_resistant,
       virus_seasonal = virus_seasonal,
       virus_mutant = virus_mutant
     )
@@ -363,14 +365,12 @@ list(
     command = append(
       bernoulli_bayes_model_sim_viruses,
       list(
-        hierarchical_model = bernoulli_hierarchical_model,
         virus_G = bernoulli_bayes_model_sim_virus_G,
-        experimental = bernoulli_bayes_model,
         experimental_full = bernoulli_bayes_model_v2
       ))
   ),
 
-  #### Model Diagnostics for Real Bayes Models  ####
+  #### Model Diagnostics Bayes Models  ####
   tar_target(
     name = bernoulli_model_diagnostics,
     command = lapply(all_models,bayes_diagnostics)
@@ -378,7 +378,7 @@ list(
 
   #### Model Insights ####
 
-  # Model Insights for Bayes Model trained on Simulation Virus AB ##
+  # Model Insights for Bayes Model trained on Simulation Viruses ##
   tar_target(
     name = bernoulli_model_insights_sim_viruses,
     mapply(
@@ -457,7 +457,6 @@ list(
       ## Data Simulation checks
       data_simulation_checks = list(
         simulation_data_check_viruses,
-        simulation_data_check_G,
         simulation_data_check_hierarchical
       ),
       ## Prior Predictive Simulations for the Real Models
@@ -475,8 +474,7 @@ list(
       insights = list(
         bernoulli_model_insights,
         bernoulli_model_insights_2,
-        bernoulli_model_insights_sim_viruses,
-        bernoulli_model_insights_g
+        bernoulli_model_insights_sim_viruses
       ),
       ## Model Comparisons
       comparison = list(model_compare),
@@ -484,15 +482,6 @@ list(
       ## Extra plots
       extra_plots = extra_plots
     ),
-  ),
-
-  ## Report summarizing the results
-  tar_render(
-    end_report,
-    path = "documents/end_report.Rmd",
-    output_file = "end_report.html",
-    params = list(data = report_data)
   )
 )
-
 
