@@ -1,7 +1,6 @@
 
 #### Global Libraries ####
 library(targets)
-library(tarchetypes)
 library(tidyverse)
 
 #### Source Function ####
@@ -26,87 +25,20 @@ list(
       )
     ),
 
-  # Scenario 2 Simulate Low Infection Rate Virus with higher sd in intercept
+  # Create a Simulation Grid #
   tar_target(
-    name = virus_low_infection,
-    command = simulate_virus(
-      baseline_infectivity_mean = 2.5, # baseline probability
-      baseline_infectivity_sd = 0.8,
-      beta_coef_mean = 1.2,
-      beta_coef_sd = 0.15,
-      n = 200,
-      n_draws = 10
-    )
+    name = virus_simulation_grid,
+    command = optimal_simulation(n = 10) # Number of simulation
   ),
 
-  # Scenario 3 a High Infection Rate Virus that is not strongly effected by the dilution
+  # Simulate 10 Viruses from a Simulation Grid #
   tar_target(
-    name = virus_not_effected,
-    command = simulate_virus(
-      baseline_infectivity_mean = 4, # baseline probability
-      baseline_infectivity_sd = 0.8,
-      beta_coef_mean = 0.5 ,
-      beta_coef_sd = 0.15,
-      n = 200,
-      n_draws = 10
-    )
-  ),
-
-  # Scenario 3 Resistant virus : Hard to kill, almost unaffected by dilution
-  tar_target(
-    name = virus_resistant,
-    command = simulate_virus(
-      baseline_infectivity_mean = 4, # baseline probability
-      baseline_infectivity_sd = 0.8,
-      beta_coef_mean = 0.1 ,
-      beta_coef_sd = 0.15,
-      n = 200,
-      n_draws = 10
-    )
-  ),
-
-  # Scenario 4 Seasonal Virus The effect of dilution is dependent on the draw
-  # and is oscillating with amplitude of parameter : seasonal_variation
-  tar_target(
-    name = virus_seasonal,
-    command = seasonal_virus(
-      baseline_infectivity_mean = 4, # baseline probability
-      baseline_infectivity_sd = 0.5,
-      beta_coef_mean = 1.2 ,
-      beta_coef_sd = 0.15,
-      seasonal_variation = 10, # amplitude of seasonal variation
-      n = 200,
-      n_draws = 10
-    )
-  ),
-
-  # Scenario 5 Random Walk : Virus with high possibility of mutations expressed as
-  # Variation added to the beta coming from normal distribution
-  tar_target(
-    name = virus_mutant,
-    command = simulate_mutation(
-      baseline_infectivity_mean = 4, # baseline probability
-      baseline_infectivity_sd = 0.8,
-      beta_coef_mean = 1.2 ,
-      beta_coef_sd = 0.15,
-      mutation_effect_mean = 0, # Mean effect of the mutation
-      mutation_effect_sd = 0.5, # Var of the effect of mutation
-      n = 200,
-      n_draws = 10
-    )
-  ),
-
-  # Simulate High Infection Rate Virus effected by imaginary variable Gamma
-  tar_target(
-    name = virus_G,
-    command = simulate_virus_v2(
-      baseline_infectivity_mean = 5, # baseline probability
-      baseline_infectivity_sd = 0.5,
-      beta_coef_mean = 1.2,   # dilution does not reduce infection rates much
-      beta_coef_sd = 0.15,
-      gamma_coef_mean = -0.5, # Imaginary variable gamma reduces the infection rates
-      gamma_coef_sd = 0.15
-    )
+    name = simulation_viruses,
+    command = simulate_from_grid(
+      virus_simulation_grid$simulation_grid,
+      n = 100, # Number of simulations per draw
+      n_draws = 10 # Number of draws
+      )
   ),
 
   # Simulate data for Hierarchical Virus Model with Multiple Repeated Experiments
@@ -123,31 +55,12 @@ list(
     )
   ),
 
-  ## Combine the datasets in a list ##
-  tar_target(
-    name = simulation_viruses,
-    command = list(
-      virus_high_infection = virus_high_infection,
-      virus_low_infection = virus_low_infection,
-      virus_not_effected = virus_not_effected,
-      virus_resistant = virus_resistant,
-      virus_seasonal = virus_seasonal,
-      virus_mutant = virus_mutant
-    )
-  ),
-
   #### Check Generated data ####
 
   # Check the Simulation of  Viruses
   tar_target(
     name = simulation_data_check_viruses,
     command = lapply(simulation_viruses,check_generated_virus)
-  ),
-
-  # Check the imaginary G Virus
-  tar_target(
-    name = simulation_data_check_G,
-    command = check_generated_virus(virus_G)
   ),
 
   # Check Hierarchical Virus Data
@@ -197,19 +110,6 @@ list(
           )
         )
       }
-    )
-  ),
-
-  # Bernoulli Bayes Model Simulation Virus G #
-  tar_target(
-    name = bernoulli_bayes_model_sim_virus_G,
-    command = bernoulli_bayes_G(
-      data = virus_G,
-      priors = c(
-        prior(normal(0,3), class = "b", coef = "virus_dilution"),
-        prior(normal(0,3), class = "b", coef = "imaginary_var"),
-        prior(normal(2,2), class = "Intercept")
-      )
     )
   ),
 
@@ -359,21 +259,10 @@ list(
     )
   ),
 
-  # Append All the models in one list #
-  tar_target(
-    name = all_models,
-    command = append(
-      bernoulli_bayes_model_sim_viruses,
-      list(
-        virus_G = bernoulli_bayes_model_sim_virus_G,
-        experimental_full = bernoulli_bayes_model_v2
-      ))
-  ),
-
   #### Model Diagnostics Bayes Models  ####
   tar_target(
     name = bernoulli_model_diagnostics,
-    command = lapply(all_models,bayes_diagnostics)
+    command = bayes_diagnostics(bernoulli_bayes_model_v2)
   ),
 
   #### Model Insights ####
@@ -412,15 +301,6 @@ list(
       )
   ),
 
-  # Model Insights for Bayes Model G
-  tar_target(
-    name = bernoulli_model_insights_g,
-    command = bayes_insights_3d(
-      data = virus_G,
-      model = bernoulli_bayes_model_sim_virus_G
-    )
-  ),
-
   #### Model Compare ####
   tar_target(
     name = model_compare,
@@ -435,7 +315,6 @@ list(
   tar_target(
     name = model_insight_list,
     command = list(
-      model_g = bernoulli_model_insights_g,
       full_model = bernoulli_model_insights_2,
       half_model = bernoulli_model_insights,
       scenario_model = bernoulli_model_insights_sim_viruses
@@ -445,11 +324,13 @@ list(
   #### Additional Combined model plots ####
   tar_target(
     name = extra_plots,
-    command = extra_model_plots(model_insight_list)
+    command = extra_model_plots(
+      model_insight_list = model_insight_list$scenario_model,
+      model_list = bernoulli_bayes_model_sim_viruses
+      )
   ),
 
-  #### Render Reports ####
-
+  #### Report Data ####
   ## Combine everything into one list
   tar_target(
     name = report_data,
