@@ -12,20 +12,6 @@ bayes_insights <- function(model,data){
   #### Posterior Summaries for Virus infections ####
   posterior_draws <- as_draws(model)
 
-  ## Posterior Distributions on log odds scale ##
-  posterior_log_odds <- mcmc_areas(
-    posterior_draws,
-    pars = "b_virus_dilution",
-    prob = 0.95,
-    prob_outer = 0.99,
-    point_est = "median"
-    )+
-    labs(
-      title = "Posterior Distribution of Virus Dilution Effect of Infection",
-      subtitle = paste0("Median : " , 3.24," ")
-    )+
-    theme_minimal()
-
   ## Credible Intervals for Virus Infections ##
   posterior_credible_intervals <- mcmc_intervals(
     posterior_draws,
@@ -75,35 +61,6 @@ bayes_insights <- function(model,data){
       probability = plogis(b_Intercept + b_virus_dilution * dilution)
     )
 
-  # Summary table
-  table_virus_effect <-
-    probability_shifts %>%
-    mutate(
-      dilution_t = round(dilution,digits = 1)
-    ) %>%
-    group_by(dilution_t) %>%
-    summarise(
-      mean_probability = mean(probability),
-      ci_95 = quantile(probability, 0.975),
-      ci_05 = quantile(probability, 0.025),
-    )
-
-  ## Error Bar plot ##
-  error_bar <-
-    table_virus_effect %>%
-    ggplot(aes(x = dilution_t,y = mean_probability))+
-    geom_point()+
-    geom_errorbar(
-      data= table_virus_effect,aes(ymin = ci_05,ymax = ci_95,colour = "red"),width = 0.2)+
-    labs(
-      title = "Infection Probability Across Dilution Levels",
-      x = "Virus Dilution",
-      y = "Probability of Infection",
-      color = "Credible Interval"
-    ) +
-    theme_minimal()
-
-
   # Plot the probability shifts
   condititional_prob_shits <-
     ggplot(probability_shifts, aes(x = dilution, y = probability)) +
@@ -136,16 +93,6 @@ bayes_insights <- function(model,data){
       x = "EC50",
       y = "Count"
     )
-
-  ## EC50 Stat Table
-  ec_50_table <- ec_50 %>%
-    summarise(
-      mean_ec_50 = round(mean(ec_50),digits = 2),
-      sd_ec_50 = round(sd(ec_50),digits = 2),
-      upper_95 = round(quantile(ec_50,0.95),digits = 2),
-      lower_0.5 = round(quantile(ec_50,0.05),digits = 2)
-    )
-
 
   #### Experimental ####
 
@@ -186,16 +133,10 @@ bayes_insights <- function(model,data){
     ),
     plots = list(
       condititional_prob_shits = condititional_prob_shits,
-      error_bar = error_bar,
       contional_effect = contional_effect,
       posterior_histogram = posterior_histogram,
-      posterior_log_odds = posterior_log_odds,
       auipc_distribution = auipc_distribution,
       ec_50_posterior = ec_50_posterior
-    ),
-    tables = list(
-      table_virus_effect = table_virus_effect,
-      ec_50_table = ec_50_table
-    )
+      )
     ))
 }
