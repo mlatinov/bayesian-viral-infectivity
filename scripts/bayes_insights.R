@@ -8,6 +8,7 @@ bayes_insights <- function(model,data){
   library(brms)
   library(pracma)
   library(tidybayes)
+  library(plotly)
 
   #### Posterior Summaries for Virus infections ####
   posterior_draws <- as_draws(model)
@@ -37,6 +38,20 @@ bayes_insights <- function(model,data){
       title = "Posterior Distribution Histogram of Virus Dilution Effect of Infection"
     )+
     theme_minimal()
+
+  ## Posterior Histogram for Virus Baseline ##
+  posterior_histogram_int <- mcmc_hist(
+    posterior_draws,
+    pars = "b_Intercept",
+    prob = 0.95,
+    outer_size = 0.99,
+    point_est = "median"
+  )+
+    labs(
+      title = "Posterior Distribution Histogram of Intercept"
+    )+
+    theme_minimal()
+
 
 ### Conditional Effect of Virus Infections and Virus Dilution ####
   contional_effect <- conditional_effects(
@@ -78,7 +93,7 @@ bayes_insights <- function(model,data){
   #### EC50 ####
 
   ## Compute EC50 as -Intercept / b_virus_dilution
-  ec_50<- probability_shifts %>%
+  ec_50 <- probability_shifts %>%
     mutate(
       ec_50 = -b_Intercept / b_virus_dilution
     )
@@ -86,7 +101,7 @@ bayes_insights <- function(model,data){
   ## EC50 Posterior Distribution
   ec_50_posterior <-
     ggplot(data = ec_50,aes(x = ec_50))+
-    geom_histogram(color = "black",fill = "lightblue")+
+    geom_histogram(color = "black",fill = "#FF9999")+
     theme_minimal()+
     labs(
       title = "Posterior EC50 Distribution",

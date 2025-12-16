@@ -149,7 +149,7 @@ list(
       data = sim_data_hierarchical,
       priors = c(
         prior(normal(0,3), class = "b"),                   # slope coefficients
-        prior(normal(2,2), class = "Intercept"),           # population intercept
+        prior(normal(4,2), class = "Intercept"),           # population intercept
         prior(exponential(2), class = "sd"),               # group-level SD
         prior(lkj(0.5), class = "cor", group = "experiment")  # correlation
         )
@@ -205,8 +205,8 @@ list(
           family = brms::bernoulli(link = "logit"),
           data = data_combined,
           priors = c(
-            prior(normal(0,0.7), class = "b"),                   # slope coefficients
-            prior(normal(0,1.5), class = "Intercept"),           # population intercept
+            prior(normal(2,1), class = "b"),                   # slope coefficients
+            prior(normal(4,2), class = "Intercept"),           # population intercept
             prior(exponential(2), class = "sd"),                 # group-level SD
             prior(lkj(0.5), class = "cor", group = "experiment") # correlation
           )
@@ -251,9 +251,9 @@ list(
     command = bernoulli_hierarchical(
       data = data_combined,
       priors = c(
-        prior(normal(0,3), class = "b"),                      # slope coefficients
-        prior(normal(2,2), class = "Intercept"),              # population intercept
-        prior(exponential(2), class = "sd"),                  # group-level SD
+        prior(normal(2,1), class = "b"),                   # slope coefficients
+        prior(normal(4,2), class = "Intercept"),
+        prior(exponential(2), class = "sd"),
         prior(lkj(0.5), class = "cor", group = "experiment")  # correlation
       )
     )
@@ -304,11 +304,7 @@ list(
   #### Model Compare ####
   tar_target(
     name = model_compare,
-    command =
-      lapply(
-        list(bernoulli_bayes_model,bernoulli_bayes_model_v2),
-        compare_bayes_models
-        )
+    command = compare_bayes_models(bernoulli_bayes_model_v2)
     ),
 
   ## Combine All model Insights in a list
@@ -337,8 +333,7 @@ list(
     command = list(
       ## Data Simulation checks
       data_simulation_checks = list(
-        simulation_data_check_viruses,
-        simulation_data_check_hierarchical
+        simulation_data_check_viruses
       ),
       ## Prior Predictive Simulations for the Real Models
       prior_simulations = list(
@@ -348,8 +343,7 @@ list(
         # General Diagnostics
         bernoulli_model_diagnostics,
         # SBC Protocol
-        sbc_bernoulli_combined,
-        sbc_bernoulli_hierarchical
+        sbc_bernoulli_combined
         ),
       ## Models insights
       insights = list(
@@ -358,7 +352,7 @@ list(
         bernoulli_model_insights_sim_viruses
       ),
       ## Model Comparisons
-      comparison = list(model_compare),
+      comparison = model_compare,
 
       ## Extra plots
       extra_plots = extra_plots

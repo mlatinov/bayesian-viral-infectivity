@@ -25,10 +25,10 @@ optimal_simulation <- function(n){
 
   # Map the Design to the parameters
   lhs_scaled <- data.frame(
-    baseline_infectivity_mean = optim_grid$design[,1] * 16,
-    beta_coef_mean = optim_grid$design[,2] * 5,
-    baseline_infectivity_sd = optim_grid$design[,3] * 1,
-    beta_coef_sd = optim_grid$design[,4] * 1
+    baseline_infectivity_mean = 1 + optim_grid$design[,1] * 1.5,
+    beta_coef_mean = 1 + optim_grid$design[,2] * 1,
+    baseline_infectivity_sd = 0.15 + optim_grid$design[,3] * 0.2,
+    beta_coef_sd = 0.1 + optim_grid$design[,4] * 0.2
   )
 
   # PCA to reduce the dim

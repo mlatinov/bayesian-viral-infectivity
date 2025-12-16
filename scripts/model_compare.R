@@ -4,6 +4,7 @@ compare_bayes_models <- function(model) {
 
   #### Libraries ####
   library(brms)
+  library(patchwork)
 
   #### Model Comparison ####
 
@@ -30,13 +31,17 @@ compare_bayes_models <- function(model) {
   # Plot the LOO R2 Distribution
   loo_r2_distirubtion <-
     ggplot(data = loo_r2_data,aes(x = R2))+
-    geom_histogram(fill = "lightblue",colour = "black")+
+    geom_histogram(fill = "#FF6666",colour = "black")+
     theme_minimal()+
     labs(
       title = "Leave One Out R2 Distribution",
       x = "LOO R2",
       y = "Count"
     )
+
+  ## Combine the R2 Plots
+  r_2_final <- r2_histogram + loo_r2_distirubtion
+
 
   # List with R2 plots and data
   r2 <- list(
@@ -46,7 +51,8 @@ compare_bayes_models <- function(model) {
       ),
     plots = list(
       in_sample_r2_distribution = r2_histogram,
-      loo_r2_distirubtion = loo_r2_distirubtion
+      loo_r2_distirubtion = loo_r2_distirubtion,
+      r_2_final = r_2_final
     )
   )
 
@@ -64,14 +70,13 @@ compare_bayes_models <- function(model) {
   # Histogram of Bayesian RMSE
   rmse_plot <-
     ggplot(data = bayes_rmse_data,aes(x = RMSE))+
-    geom_histogram(fill = "lightblue")+
+    geom_histogram(fill = "#A020F0",color = "black")+
     labs(
       x = "RMSE",
       y = "Count",
       title = "Posterior RMSE Distribution"
     )+
     theme_minimal()
-
 
   # List with error measurements
   error_measurements <- list(
